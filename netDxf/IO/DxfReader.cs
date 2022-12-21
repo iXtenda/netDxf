@@ -163,9 +163,9 @@ namespace netDxf.IO
             if (version < DxfVersion.AutoCad2007)
             {
 
-#if !NET45
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
+// #if !NET45
+//                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+// #endif
 
                 string dwgCodePage = CheckHeaderVariable(stream, HeaderVariableCode.DwgCodePage, out this.isBinary);
                 if (string.IsNullOrEmpty(dwgCodePage))
@@ -287,7 +287,7 @@ namespace netDxf.IO
                             this.ReadEntities();
                             break;
                         case DxfObjectCode.ObjectsSection:
-                            this.ReadObjects();
+                            this.ReadObjects(version);
                             break;
                         case DxfObjectCode.ThumbnailImageSection:
                             this.ReadThumbnailImage();
@@ -1025,7 +1025,7 @@ namespace netDxf.IO
             }
         }
 
-        private void ReadObjects()
+        private void ReadObjects(DxfVersion version)
         {
             Debug.Assert(this.chunk.ReadString() == DxfObjectCode.ObjectsSection);
 
@@ -1112,6 +1112,12 @@ namespace netDxf.IO
                         }
                         break;
                     case DxfObjectCode.XRecord:
+                        if (version < DxfVersion.AutoCad2000)
+                        {
+                            ReadUnknowEntity();
+                            break;
+                        }
+
                         XRecord xRecord = this.ReadXRecord();
                         Debug.Assert(xRecord != null, "XRecord cannot be null");
                         if (xRecord != null)
@@ -1120,10 +1126,7 @@ namespace netDxf.IO
                         }
                         break;
                     default:
-                        do
-                        {
-                            this.chunk.Next();
-                        } while (this.chunk.Code != 0);
+                        ReadUnknowEntity();
                         break;
                 }
             }
