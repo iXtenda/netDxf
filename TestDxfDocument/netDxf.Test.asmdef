@@ -1,0 +1,16 @@
+{
+    "name": "netDxf.Test",
+    "rootNamespace": "",
+    "references": [
+        "GUID:9ce5bc11b3fe35d4cbe644b2798bccdf"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
