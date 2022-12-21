@@ -138,7 +138,33 @@ namespace netDxf.IO
 
         public string ReadHex()
         {
-            return (string) this.value;
+            var o_value = (string)this.value;
+            if (string.IsNullOrWhiteSpace(o_value))
+            {
+                return o_value;
+            }
+            bool any_lower = false;
+            foreach (var c  in o_value)
+            {
+                if (Char.ToUpperInvariant(c) != c)
+                {
+                    any_lower = true;
+                    break;
+                }
+            }
+            if (!any_lower)
+            {
+                return o_value;
+            }
+            var sb = new System.Text.StringBuilder();
+            foreach (var c in o_value)
+            {
+                sb.Append(Char.ToUpperInvariant(c));
+            }
+            var n_value = sb.ToString();
+            // Cache the result.
+            this.value = n_value;
+            return n_value;
         }
 
         public override string ToString()

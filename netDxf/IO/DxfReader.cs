@@ -156,10 +156,8 @@ namespace netDxf.IO
 
             DxfVersion version = DxfDocument.CheckDxfFileVersion(stream, out this.isBinary);
 
-            if (version < DxfVersion.AutoCad2000)
-            {
+            if (version < DxfVersion.AutoCad12)
                 throw new DxfVersionNotSupportedException(string.Format("DXF file version not supported : {0}.", version), version);
-            }
 
             Encoding encoding;
             if (version < DxfVersion.AutoCad2007)
@@ -435,10 +433,8 @@ namespace netDxf.IO
                     case HeaderVariableCode.AcadVer:
                         string version = this.chunk.ReadString();
                         DxfVersion acadVer = StringEnum<DxfVersion>.Parse(version, StringComparison.OrdinalIgnoreCase);
-                        if (acadVer < DxfVersion.AutoCad2000)
-                        {
-                            throw new NotSupportedException("Only AutoCad2000 and higher DXF versions are supported.");
-                        }
+                        if (acadVer < DxfVersion.AutoCad12)
+                            throw new NotSupportedException("Only AutoCad12 and higher DXF versions are supported.");
                         this.doc.DrawingVariables.AcadVer = acadVer;
                         this.chunk.Next();
                         break;
@@ -3858,6 +3854,18 @@ namespace netDxf.IO
                         handle = this.chunk.ReadHex();
                         this.chunk.Next();
                         break;
+                    case 8: //layer code
+                        // This happens in AutoCad 14 files.
+                        string layerName = this.DecodeEncodedNonAsciiCharacters(this.chunk.ReadString());
+                        layer = this.GetLayer(layerName);
+                        this.chunk.Next();
+                        break;
+                    case 62:
+                        // This happens in AutoCad 14 files.
+                        if (!color.UseTrueColor)
+                            color = AciColor.FromCadIndex(this.chunk.ReadShort());
+                        this.chunk.Next();
+                        break;
                     case 102:
                         this.ReadExtensionDictionaryGroup();
                         this.chunk.Next();
@@ -3868,6 +3876,11 @@ namespace netDxf.IO
                         {
                             owner = null;
                         }
+                        this.chunk.Next();
+                        break;
+                    case 420: // the entity uses true color
+                        // This happens in AutoCad 14 files.
+                        color = AciColor.FromTrueColor(this.chunk.ReadInt());
                         this.chunk.Next();
                         break;
                     default:
@@ -9890,6 +9903,16 @@ namespace netDxf.IO
             }
 
             return lineDefinitions;
+        }
+
+        private void ReadUnknowEntity()
+        {
+            // if the entity is unknown keep reading until an end of section or a new entity is found
+            this.chunk.Next();
+            while (this.chunk.Code != 0)
+            {
+                this.chunk.Next();
+            }
         }
 
         #endregion
